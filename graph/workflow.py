@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, START, END
 from graph.state import ResearchState
+from agents.research_crew import run_research_crew
 
 class SubQuestions(BaseModel):
     sub_questions: List[str] = Field(
@@ -26,18 +27,26 @@ def planner_node(state: ResearchState) -> dict:
     result = structured_llm.invoke(prompt)
     return {'sub_questions': result.sub_questions}
 
+def research_node(state: ResearchState) -> dict:
+    findings = run_research_crew(state["sub_questions"])
+    return {"findings": findings}
+
 builder = StateGraph(ResearchState)
 builder.add_node("planner", planner_node)
+builder.add_node("research_crew", research_node)
 builder.add_edge(START, "planner")
-builder.add_edge("planner",END)
+builder.add_edge("planner","research_crew")
+builder.add_edge("research_crew", END)
 
 graph = builder.compile()
 
 if __name__ == "__main__":
-    result = graph.invoke({"topic": "machine learning", "sub_questions":[]})
-    for questions in result["sub_questions"]:
-        print("-", questions)
-
-
+    result = graph.invoke({
+        "topic": "the impact of remote work on urban housing markets",
+        "sub_questions": [],
+        "findings": [],
+    })
+    for q, f in zip(result["sub_questions"], result["findings"]):
+        print(f"\nQ: {q}\n{f}\n{'-'*60}")
 
 

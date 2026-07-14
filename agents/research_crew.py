@@ -13,13 +13,18 @@ researcher = Agent(
     tools=[web_search],
     llm=llm,
     verbose=True,
+    max_iter=10
 )
 
 def run_research_crew(sub_questions: list[str]) -> list[str]:
     tasks = [
         Task(
-            description=f"Research and answer this thoroughly, citing source URLs for every claim: {q}",
-            expected_output="A well-organized answer with inline source URLs.",
+            description=(
+                f"Research and answer this concisely, citing source URLs for every claim: {q}\n\n"
+                f"Use no more than 3-4 targeted searches. Prioritize authoritative, recent sources "
+                f"over exhaustive coverage."
+            ),
+            expected_output="A focused, well-organized answer (3-5 paragraphs) with inline source URLs.",
             agent=researcher,
         )
         for q in sub_questions
