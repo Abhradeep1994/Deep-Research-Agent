@@ -168,7 +168,7 @@ python3 -m uvicorn app:app --reload
 
 Then open **http://127.0.0.1:8000** and submit a topic through the form. The report renders directly in the browser once the run completes.
 
-`app.py` also exposes a plain JSON API — `POST /research` with `{"topic": "..."}` — which is what the browser UI calls internally, and what an external trigger (e.g. an n8n workflow, see Phase 6) can call the same way.
+`app.py` also exposes a plain JSON API — `POST /research` with `{"topic": "..."}` — which is what the browser UI calls internally, and what an external trigger, n8n workflow can call the same way.
 
 **Either way, a full run typically takes several minutes** — multiple real LLM calls and live web searches per sub-question, plus verification, and possibly a retry pass.
 
