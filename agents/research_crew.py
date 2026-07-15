@@ -33,7 +33,8 @@ def extract_claims(raw_answer: str) -> ResearchFindings:
     return structured_extractor.invoke(EXTRACTION_PROMPT.format(raw_answer=raw_answer))
 
 
-def run_research_crew(sub_questions: list[str]) -> list[ResearchOutput]:
+def run_research_crew(sub_questions: list[str], feedback: dict[str, str] | None = None) -> list[ResearchOutput]:
+    feedback = feedback or {}
     mcp_adapter = MCPServerAdapter(server_params)
     try:
         tools = mcp_adapter.tools
@@ -48,22 +49,26 @@ def run_research_crew(sub_questions: list[str]) -> list[ResearchOutput]:
             verbose=True,
             max_iter=10,
         )
-        tasks = [
-            Task(
-                description=(
-                    f"Research this sub-question: {q}\n\n"
-                    f"Use web_search to find candidate sources, then fetch_page to read their "
-                    f"content. Write your findings as distinct, atomic factual claims — for each "
-                    f"claim, cite every source URL that supports it (list multiple URLs if more "
-                    f"than one source confirms it). Use no more than 5 total tool calls."
-                ),
-                expected_output=(
-                    "A list of atomic factual claims, each followed by its supporting source URL(s)."
-                ),
-                agent=researcher,
+        tasks = []
+        for q in sub_questions:
+            extra = f"\n\nGuidance from a previous review: {feedback[q]}" if q in feedback else ""
+            tasks.append(
+                Task(
+                    description=(
+                        f"Research this sub-question: {q}\n\n"
+                        f"Use web_search to find candidate sources, then fetch_page to read their "
+                        f"content. Write your findings as distinct, atomic factual claims — for each "
+                        f"claim, cite every source URL that supports it (list multiple URLs if more "
+                        f"than one source confirms it). Use no more than 5 total tool calls."
+                        f"{extra}"
+                    ),
+                    expected_output=(
+                        "A list of atomic factual claims, each followed by its supporting source URL(s)."
+                    ),
+                    agent=researcher,
+                )
             )
-            for q in sub_questions
-        ]
+
         crew = Crew(agents=[researcher], tasks=tasks, process=Process.sequential, verbose=True)
         crew_output = crew.kickoff()
 
