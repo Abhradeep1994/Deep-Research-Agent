@@ -97,24 +97,9 @@ deep-research-agent/
 ├── .gitignore
 ├── requirements.txt
 ├── main.py                      # CLI entry point
+├── app.py                       # FastAPI app: web UI + reusable /research endpoint
 └── README.md
 ```
-
----
-
-## Roadmap
-
-- [x] **Phase 0** — Environment & repo setup
-- [x] **Phase 1** — Planner (LangGraph, structured output)
-- [x] **Phase 2** — Research Crew (CrewAI)
-- [x] **Phase 2.5** — Real MCP tool servers (web_search, fetch_page)
-- [x] **Phase 2.6** — Structured, multi-source claim extraction
-- [x] **Phase 3** — Per-claim Verifier & cross-source Confidence Scorer
-- [x] **Phase 4** — Bounded, targeted retry loop
-- [x] **Phase 5** — Report assembly with honest low-confidence caveats
-- [ ] **Phase 6** — n8n trigger + email delivery (planned)
-- [ ] RAG chat layer — deferred/optional extension, not required for the core pipeline
-
 ---
 
 ## Setup
@@ -160,6 +145,10 @@ print(msg.content[0].text)
 
 ## Usage
 
+There are two ways to run a research pipeline: the command line, or a simple web UI. Both drive the exact same underlying LangGraph pipeline.
+
+### Option 1 — Command line
+
 ```bash
 python3 main.py "the impact of remote work on urban housing markets"
 ```
@@ -169,7 +158,21 @@ Or run interactively:
 python3 main.py
 ```
 
-The final report is written to `output_report.md`. A full run typically takes several minutes, since it involves multiple real LLM calls and live web searches per sub-question, plus verification.
+The final report is written to `output_report.md`.
+
+### Option 2 — Web UI
+
+```bash
+python3 -m uvicorn app:app --reload
+```
+
+Then open **http://127.0.0.1:8000** and submit a topic through the form. The report renders directly in the browser once the run completes.
+
+`app.py` also exposes a plain JSON API — `POST /research` with `{"topic": "..."}` — which is what the browser UI calls internally, and what an external trigger (e.g. an n8n workflow, see Phase 6) can call the same way.
+
+**Either way, a full run typically takes several minutes** — multiple real LLM calls and live web searches per sub-question, plus verification, and possibly a retry pass.
+
+**Known limitation:** the `/research` endpoint runs synchronously — the request stays open for the entire multi-minute run, and the server blocks other requests meanwhile. Fine for a single-user demo; a production version would hand the run off to a background job/task queue and let the client poll or use a websocket for progress instead of holding one long-lived request open.
 
 ### Running tests
 ```bash

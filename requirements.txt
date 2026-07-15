@@ -18,3 +18,7 @@ requests
 # Testing
 pytest
 pytest-timeout
+
+# API / UI
+fastapi
+uvicorn[standard]
