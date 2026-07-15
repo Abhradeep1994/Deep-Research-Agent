@@ -1,0 +1,20 @@
+# Core orchestration
+langgraph
+langchain-anthropic
+anthropic
+pydantic
+python-dotenv
+
+# Multi-agent research crew
+crewai
+crewai-tools[mcp]
+mcp
+
+# Tools used by the MCP server
+ddgs
+beautifulsoup4
+requests
+
+# Testing
+pytest
+pytest-timeout
