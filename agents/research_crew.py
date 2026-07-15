@@ -6,15 +6,31 @@ from pathlib import Path
 from crewai import Agent, Task, Crew, Process, LLM
 from crewai_tools import MCPServerAdapter
 from mcp import StdioServerParameters
+from langchain_anthropic import ChatAnthropic
 from graph.schemas import ResearchFindings, ResearchOutput
 
 llm = LLM(model="anthropic/claude-sonnet-5")
+
 SERVER_SCRIPT = str(Path(__file__).parent.parent / "mcp_servers" / "research_server.py")
 
 server_params = StdioServerParameters(
     command=sys.executable,
     args=[SERVER_SCRIPT],
 )
+
+extraction_llm = ChatAnthropic(model="claude-sonnet-5")
+structured_extractor = extraction_llm.with_structured_output(ResearchFindings)
+
+EXTRACTION_PROMPT = """Extract distinct, atomic factual claims from the research answer below.
+For each claim, list every source URL (mentioned in the text) that supports it.
+
+Research answer:
+{raw_answer}
+"""
+
+
+def extract_claims(raw_answer: str) -> ResearchFindings:
+    return structured_extractor.invoke(EXTRACTION_PROMPT.format(raw_answer=raw_answer))
 
 
 def run_research_crew(sub_questions: list[str]) -> list[ResearchOutput]:
@@ -26,7 +42,7 @@ def run_research_crew(sub_questions: list[str]) -> list[ResearchOutput]:
             role="Research Analyst",
             goal="Find accurate, well-sourced claims that answer a specific sub-question",
             backstory="An experienced analyst skilled at web research, who always separates "
-                       "distinct facts and tracks exactly which source(s) support each one.",
+                       "distinct facts and cites exactly which source(s) support each one.",
             tools=tools,
             llm=llm,
             verbose=True,
@@ -37,23 +53,24 @@ def run_research_crew(sub_questions: list[str]) -> list[ResearchOutput]:
                 description=(
                     f"Research this sub-question: {q}\n\n"
                     f"Use web_search to find candidate sources, then fetch_page to read their "
-                    f"content. Break your findings into distinct, atomic factual claims. For each "
-                    f"claim, list every source URL that supports it — if the same fact is confirmed "
-                    f"by more than one independent source, list all of them. Use no more than 5 "
-                    f"total tool calls."
+                    f"content. Write your findings as distinct, atomic factual claims — for each "
+                    f"claim, cite every source URL that supports it (list multiple URLs if more "
+                    f"than one source confirms it). Use no more than 5 total tool calls."
                 ),
-                expected_output="A structured list of claims, each with its supporting source URL(s).",
+                expected_output=(
+                    "A list of atomic factual claims, each followed by its supporting source URL(s)."
+                ),
                 agent=researcher,
-                output_pydantic=ResearchFindings,
             )
             for q in sub_questions
         ]
         crew = Crew(agents=[researcher], tasks=tasks, process=Process.sequential, verbose=True)
         crew_output = crew.kickoff()
 
-        return [
-            ResearchOutput(sub_question=q, claims=task_output.pydantic.claims)
-            for q, task_output in zip(sub_questions, crew_output.tasks_output)
-        ]
+        results = []
+        for q, task_output in zip(sub_questions, crew_output.tasks_output):
+            findings = extract_claims(task_output.raw)
+            results.append(ResearchOutput(sub_question=q, claims=findings.claims))
+        return results
     finally:
         mcp_adapter.stop()

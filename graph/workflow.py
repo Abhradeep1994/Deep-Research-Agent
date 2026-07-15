@@ -28,8 +28,8 @@ def planner_node(state: ResearchState) -> dict:
     return {'sub_questions': result.sub_questions}
 
 def research_node(state: ResearchState) -> dict:
-    findings = run_research_crew(state["sub_questions"])
-    return {"findings": findings}
+    research_outputs = run_research_crew(state["sub_questions"])
+    return {"research_outputs": research_outputs}
 
 builder = StateGraph(ResearchState)
 builder.add_node("planner", planner_node)
@@ -44,9 +44,10 @@ if __name__ == "__main__":
     result = graph.invoke({
         "topic": "the impact of remote work on urban housing markets",
         "sub_questions": [],
-        "findings": [],
+        "research_outputs": [],
     })
-    for q, f in zip(result["sub_questions"], result["findings"]):
+    for q, f in zip(result["sub_questions"], result["research_outputs"]):
         print(f"\nQ: {q}\n{f}\n{'-'*60}")
+
 
 

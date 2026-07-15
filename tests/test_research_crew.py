@@ -3,11 +3,17 @@ from agents.research_crew import run_research_crew
 
 
 @pytest.mark.slow
-def test_run_research_crew_returns_findings():
-    """Integration test — makes real LLM + web search calls.
-    Costs a small amount of API credit; not run by default."""
-    findings = run_research_crew(["What is the capital of France?"])
-    assert isinstance(findings, list)
-    assert len(findings) == 1
-    assert isinstance(findings[0], str)
-    assert len(findings[0]) > 0
+@pytest.mark.timeout(120)
+def test_run_research_crew_returns_structured_claims():
+    """Integration test — real MCP server, real LLM calls. Costly, not run by default."""
+    results = run_research_crew(["What is the capital of France?"])
+    assert isinstance(results, list)
+    assert len(results) == 1
+
+    result = results[0]
+    assert result.sub_question == "What is the capital of France?"
+    assert len(result.claims) > 0
+
+    for claim in result.claims:
+        assert isinstance(claim.text, str) and len(claim.text) > 0
+        assert isinstance(claim.source_urls, list) and len(claim.source_urls) > 0
