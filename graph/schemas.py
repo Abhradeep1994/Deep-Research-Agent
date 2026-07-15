@@ -13,3 +13,12 @@ class ResearchFindings(BaseModel):
 class ResearchOutput(BaseModel):
     sub_question: str
     claims: List[Claim]
+
+class ScoredClaim(Claim):
+    confidence: float = Field(description="0.0 to 1.0 confidence this claim is well-supported")
+    note: str = Field(default="", description="How confidence was determined, or why it's low")
+
+
+class VerifiedResearchOutput(BaseModel):
+    sub_question: str
+    claims: List[ScoredClaim]
