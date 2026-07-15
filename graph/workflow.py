@@ -9,9 +9,10 @@ from graph.state import ResearchState
 from graph.schemas import VerifiedResearchOutput
 from agents.research_crew import run_research_crew
 from graph.verifier import verify_research_outputs
+from graph.report import assemble_report
 
 CONFIDENCE_THRESHOLD = 0.6
-MAX_RETRIES = 2
+MAX_RETRIES = 1
 
 
 class SubQuestions(BaseModel):
@@ -85,11 +86,17 @@ def retry_research_node(state: ResearchState) -> dict:
     }
 
 
+def report_node(state: ResearchState) -> dict:
+    report = assemble_report(state["topic"], state["verified_outputs"])
+    return {"final_report": report}
+
+
 builder = StateGraph(ResearchState)
 builder.add_node("planner", planner_node)
 builder.add_node("research_crew", research_node)
 builder.add_node("verifier", verifier_node)
 builder.add_node("retry_research", retry_research_node)
+builder.add_node("report", report_node)
 
 builder.add_edge(START, "planner")
 builder.add_edge("planner", "research_crew")
@@ -97,23 +104,28 @@ builder.add_edge("research_crew", "verifier")
 builder.add_conditional_edges(
     "verifier",
     route_after_verification,
-    {"retry": "retry_research", "done": END},
+    {"retry": "retry_research", "done": "report"},
 )
 builder.add_edge("retry_research", "verifier")
+builder.add_edge("report", END)
 
 graph = builder.compile()
 
 if __name__ == "__main__":
+    topic = "the impact of remote work on urban housing markets"
     result = graph.invoke({
-        "topic": "the impact of remote work on urban housing markets",
+        "topic": topic,
         "sub_questions": [],
         "research_outputs": [],
         "verified_outputs": [],
         "retry_count": 0,
+        "final_report": "",
     })
+
     print(f"\nRetries used: {result['retry_count']}\n")
-    for vo in result["verified_outputs"]:
-        print(f"Q: {vo.sub_question}")
-        for c in vo.claims:
-            print(f"  [{c.confidence:.2f}] {c.text}")
-        print()
+
+    with open("output_report.md", "w") as f:
+        f.write(result["final_report"])
+    print("Report written to output_report.md")
+    print("\n--- Report preview ---\n")
+    print(result["final_report"][:1000])

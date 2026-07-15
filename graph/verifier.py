@@ -17,7 +17,7 @@ class CorroborationCheck(BaseModel):
     reasoning: str = Field(description="Brief reasoning for the judgment")
 
 
-corroboration_llm = ChatAnthropic(model="claude-sonnet-5")
+corroboration_llm = ChatAnthropic(model="claude-haiku-4-5-20251001")
 structured_corroboration = corroboration_llm.with_structured_output(CorroborationCheck)
 
 CORROBORATION_PROMPT = """You are fact-checking a single claim by searching for independent corroboration.

@@ -9,7 +9,7 @@ from mcp import StdioServerParameters
 from langchain_anthropic import ChatAnthropic
 from graph.schemas import ResearchFindings, ResearchOutput
 
-llm = LLM(model="anthropic/claude-sonnet-5")
+llm = LLM(model="anthropic/claude-haiku-4-5-20251001")
 
 SERVER_SCRIPT = str(Path(__file__).parent.parent / "mcp_servers" / "research_server.py")
 
@@ -18,7 +18,7 @@ server_params = StdioServerParameters(
     args=[SERVER_SCRIPT],
 )
 
-extraction_llm = ChatAnthropic(model="claude-sonnet-5")
+extraction_llm = ChatAnthropic(model="claude-haiku-4-5-20251001", max_tokens=4096)
 structured_extractor = extraction_llm.with_structured_output(ResearchFindings)
 
 EXTRACTION_PROMPT = """Extract distinct, atomic factual claims from the research answer below.
@@ -47,7 +47,7 @@ def run_research_crew(sub_questions: list[str], feedback: dict[str, str] | None 
             tools=tools,
             llm=llm,
             verbose=True,
-            max_iter=10,
+            max_iter=6,
         )
         tasks = []
         for q in sub_questions:
@@ -59,7 +59,7 @@ def run_research_crew(sub_questions: list[str], feedback: dict[str, str] | None 
                         f"Use web_search to find candidate sources, then fetch_page to read their "
                         f"content. Write your findings as distinct, atomic factual claims — for each "
                         f"claim, cite every source URL that supports it (list multiple URLs if more "
-                        f"than one source confirms it). Use no more than 5 total tool calls."
+                        f"than one source confirms it). Focus on the 4-6 most important, distinct claims rather than being maximally exhaustive. Use no more than 5 total tool calls."
                         f"{extra}"
                     ),
                     expected_output=(
