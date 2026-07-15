@@ -5,7 +5,9 @@ from agents.research_crew import run_research_crew
 @pytest.mark.slow
 @pytest.mark.timeout(120)
 def test_run_research_crew_returns_structured_claims():
-    """Integration test — real MCP server, real LLM calls. Costly, not run by default."""
+    """Integration test for real MCP server, real LLM calls. 
+    **Costly, not to be run by default.
+    """
     results = run_research_crew(["What is the capital of France?"])
     assert isinstance(results, list)
     assert len(results) == 1

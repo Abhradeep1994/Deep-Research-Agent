@@ -4,7 +4,7 @@ from crewai.tools import tool
 from ddgs import DDGS
 
 def test_web_search_returns_results():
-    """Integration test — hits the real DuckDuckGo search API."""
+    """Integration test to hit the real DuckDuckGo search API."""
     result = web_search.func("Python programming language")
     assert isinstance(result, str)
     assert len(result) > 0
@@ -12,7 +12,7 @@ def test_web_search_returns_results():
 
 
 def test_web_search_handles_no_results(monkeypatch):
-    """Unit test — mocks the external dependency so this test is fast,
+    """Unit test for external dependency so this test is fast,
     deterministic, and doesn't depend on network access."""
 
     class FakeDDGS:

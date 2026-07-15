@@ -38,7 +38,7 @@ def test_format_claims_for_prompt_handles_empty_input():
 @pytest.mark.slow
 @pytest.mark.timeout(60)
 def test_assemble_report_produces_markdown():
-    """Integration test — real LLM call. Costs a small amount of API credit."""
+    """Integration test for real LLM call. It will cost a small amount of API credit."""
     fake = [
         VerifiedResearchOutput(sub_question='What is the capital of France?', claims=[
             ScoredClaim(

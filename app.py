@@ -1,6 +1,3 @@
-"""FastAPI app: a simple web UI for triggering research runs, plus a
-reusable /research JSON endpoint that n8n (Phase 6) will also call directly."""
-
 from dotenv import load_dotenv
 load_dotenv()
 

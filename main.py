@@ -1,10 +1,3 @@
-"""Entry point for the Deep Research Agent CLI.
-
-Usage:
-    python3 main.py "your research topic here"
-    python3 main.py                      # prompts interactively if no topic given
-"""
-
 from dotenv import load_dotenv
 load_dotenv()
 
